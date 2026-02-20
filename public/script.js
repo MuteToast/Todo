@@ -147,8 +147,22 @@ function save() {
     if(i === -1) tasks.unshift(obj);
     else tasks[i] = obj;
     localStorage.setItem('tasks', JSON.stringify(tasks));
+    // remember id of new/updated item so we can scroll to it after render
+    const newId = obj.id;
     reset();
     render();
+    // Ensure the newly added task is visible in the WebView
+    try {
+      const el = document.getElementById(newId);
+      if (el && el.scrollIntoView) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (list && list.lastElementChild) {
+        // fallback: scroll list to bottom
+        list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    } catch (e) {
+      console.error('Scroll to new item failed', e);
+    }
     // Debugging feedback for APK/webview: alert success and show count
     alert('Uppgift sparad — totalt: ' + tasks.length + ' items');
   } catch (err) {
