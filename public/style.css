@@ -113,6 +113,7 @@ h1 {
   gap:12px;
   overflow: auto;
   padding-right:6px;
+  max-height: 500px;
 }
 
 /* task design */
