@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>My ToDo-List</title>
+<!-- importerad font -->
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+<!-- favicon -->
+<link rel="icon" href="bilder/favicon.ico" type="image/x-icon">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <h1> My ToDo-List</h1>
+  <div class="app">
+    <button id="openBtn" class="btn big" type="button">+</button>
+
+    <form id="form" class="hide">
+      <button id="closeBtn" type="button" class="close" aria-label="Stäng">X</button>
+      <label for="title">Titel:</label>
+      <input id="title" type="text" required>
+      <label for="date">Datum:</label>
+      <input id="date" type="date">
+      <label for="desc">Beskrivning:</label>
+      <input id="desc" rows="3"></input>
+      <button id="saveBtn" class="btn big" type="submit">Lägg till</button>
+    </form>
+
+    <div id="list"></div>
+  </div>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
