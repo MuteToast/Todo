@@ -12,19 +12,7 @@ const desc  = document.getElementById('desc');
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 let current = {};
 
-// ✅ Be om tillstånd för notiser
-if ("Notification" in window) {
-  Notification.requestPermission().then(result => {
-    console.log("Notification permission:", result);
-  });
-}
 
-// ✅ Registrera service worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
-    .then(() => console.log('Service Worker registrerad'))
-    .catch(err => console.error('SW fel:', err));
-}
 
 // Rendera tasks
 function render() {
@@ -52,18 +40,7 @@ function render() {
     `;
   });
 
-  // ✅ Skicka push om datum är idag och inte notifierad
-  tasks.forEach(t => {
-    if (t.date) {
-      const taskDate = new Date(t.date);
-      const today = new Date();
-      if(taskDate.toDateString() === today.toDateString() && !t.notified) {
-        t.notified = true;
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-        sendNotification(t);
-      }
-    }
-  });
+
 }
 
 // Markera/avmarkera task
@@ -149,17 +126,7 @@ function removeOldDoneTasks() {
   }
 }
 
-// ✅ Simpel push-funktion via servern
-function sendNotification(task) {
-  fetch('/send-notification', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ 
-      title: `Påminnelse: ${task.title}`, 
-      body: task.desc || '' 
-    })
-  });
-}
+
 
 // Event listeners
 openBtn.addEventListener('click', () => form.classList.remove('hide'));
@@ -176,35 +143,3 @@ window.delTask = delTask;
 removeOldDoneTasks();
 render();
 setInterval(removeOldDoneTasks, 5 * 60 * 1000);
-
-
-// ✅ Prenumerera push
-async function subscribeUser() {
-  if ('serviceWorker' in navigator && 'PushManager' in window) {
-    const reg = await navigator.serviceWorker.register('/sw.js');
-
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        'BGp8UXausFLBjlcTXHKUTbZ7lhOUX60fKxL1Mtybb3NQq3gyi5mvaLiYfC09aqSoRh80vfNTWyhaKcZYMNB_9EE'
-      )
-    });
-
-    await fetch('/subscribe', {
-      method: 'POST',
-      body: JSON.stringify(sub),
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    console.log('Användare prenumererad för push!');
-  }
-}
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
-}
-
-subscribeUser();
