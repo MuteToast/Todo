@@ -150,8 +150,16 @@ window.delTask = delTask;
 window.toggleDone = toggleDone;
 
 // Ensure DOM is ready and localStorage is available
-window.onload = function () {
-  console.log("Window fully loaded");
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM ready, initializing app');
+    removeOldDoneTasks();
+    render();
+  });
+} else {
+  console.log('DOM already ready, initializing app');
   removeOldDoneTasks();
   render();
-};
+}
+
+setInterval(removeOldDoneTasks, 5 * 60 * 1000);
