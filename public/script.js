@@ -54,6 +54,16 @@ function render() {
     const taskEl = document.createElement('div');
     taskEl.className = 'task' + (t.done ? ' done' : '');
     taskEl.id = t.id;
+    // Inline styles to ensure visibility inside various WebViews
+    taskEl.style.display = 'block';
+    taskEl.style.width = '100%';
+    taskEl.style.background = '#fffbe6';
+    taskEl.style.borderLeft = '5px solid #25a55f';
+    taskEl.style.padding = '12px';
+    taskEl.style.borderRadius = '6px';
+    taskEl.style.fontSize = '1.1rem';
+    taskEl.style.color = '#000';
+    taskEl.style.boxSizing = 'border-box';
 
     const titleP = document.createElement('p');
     const strong = document.createElement('strong');
@@ -92,6 +102,19 @@ function render() {
     taskEl.appendChild(doneBtn);
 
     list.appendChild(taskEl);
+    // If this is the newly added item, visually highlight it briefly
+    try {
+      if (window.__lastAddedId && t.id === window.__lastAddedId) {
+        taskEl.style.outline = '3px solid #ffd966';
+        taskEl.style.transition = 'outline 0.3s ease-in-out';
+        setTimeout(() => {
+          taskEl.style.outline = '';
+          try { delete window.__lastAddedId; } catch(e) { window.__lastAddedId = null; }
+        }, 3000);
+      }
+    } catch (e) {
+      console.error('Highlight new item failed', e);
+    }
   });
   // Debug check: verify DOM children match tasks length
   try {
@@ -149,6 +172,8 @@ function save() {
     localStorage.setItem('tasks', JSON.stringify(tasks));
     // remember id of new/updated item so we can scroll to it after render
     const newId = obj.id;
+    // expose to render() so it can highlight the new element if needed
+    try { window.__lastAddedId = newId; } catch(e) { /* ignore */ }
     reset();
     render();
     // Ensure the newly added task is visible in the WebView
