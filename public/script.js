@@ -1,4 +1,5 @@
 // Konstanter
+const DEBUG = false; // sätt true för alerts i APK vid behov
 const form = document.getElementById('form');
 const openBtn = document.getElementById('openBtn');
 const closeBtn = document.getElementById('closeBtn');
@@ -12,20 +13,18 @@ const desc  = document.getElementById('desc');
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 let current = {};
 
+function debugAlert(msg) {
+  if (DEBUG) alert(msg);
+  console.log(msg);
+}
 
-
-// Rendera tasks
+// Rendera tasks (DOM-baserad för bättre WebView-kompatibilitet)
 function render() {
-  try {
-    list.innerHTML = '';
+  if (!list) { debugAlert('render(): #list saknas i DOM'); return; }
+  debugAlert('render() called — tasks.length=' + tasks.length);
 
-    // Debug: log tasks length on render (useful inside APK)
-    console.log('render() called — tasks.length =', tasks.length);
-  } catch (err) {
-    alert('Fel i render(): ' + (err.message || err));
-    console.error('Render error', err);
-    return;
-  }
+  // Rensa listan
+  while (list.firstChild) list.removeChild(list.firstChild);
 
   tasks.sort((a, b) => {
     if(a.done && !b.done) return 1;
@@ -37,28 +36,53 @@ function render() {
   });
 
   tasks.forEach(t => {
-    list.innerHTML += `
-      <div class="task ${t.done ? "done": ""}" id="${t.id}">
-        <p><strong>${t.title}</strong></p>
-        <p>${t.date}</p>
-        <p>${t.desc}</p>
-        <button onclick="editTask('${t.id}')" class="btn" type="button">Ändra</button>
-        <button onclick="delTask('${t.id}')" class="btn" type="button">Ta bort</button>
-        <button onclick="toggleDone('${t.id}')" class="btn" type="button">Klart</button>
-      </div>
-    `;
-  });
-  // Debug check: verify DOM children match tasks length
-  try {
-    const children = list.children.length;
-    console.log('render() — DOM children:', children);
-    if (tasks.length > 0 && children !== tasks.length) {
-      alert('Debug: tasks saved but not rendered. tasks.length=' + tasks.length + ', DOM children=' + children);
-    }
-  } catch (err) {
-    console.error('Post-render check error', err);
-  }
+    const taskDiv = document.createElement('div');
+    taskDiv.className = 'task' + (t.done ? ' done' : '');
+    taskDiv.id = t.id;
 
+    const titleP = document.createElement('p');
+    const strong = document.createElement('strong');
+    strong.textContent = t.title;
+    titleP.appendChild(strong);
+    taskDiv.appendChild(titleP);
+
+    const dateP = document.createElement('p');
+    dateP.textContent = t.date || '';
+    taskDiv.appendChild(dateP);
+
+    const descP = document.createElement('p');
+    descP.textContent = t.desc || '';
+    taskDiv.appendChild(descP);
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn';
+    editBtn.type = 'button';
+    editBtn.textContent = 'Ändra';
+    editBtn.addEventListener('click', () => editTask(t.id));
+    taskDiv.appendChild(editBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn';
+    delBtn.type = 'button';
+    delBtn.textContent = 'Ta bort';
+    delBtn.addEventListener('click', () => delTask(t.id));
+    taskDiv.appendChild(delBtn);
+
+    const doneBtn = document.createElement('button');
+    doneBtn.className = 'btn';
+    doneBtn.type = 'button';
+    doneBtn.textContent = 'Klart';
+    doneBtn.addEventListener('click', () => toggleDone(t.id));
+    taskDiv.appendChild(doneBtn);
+
+    list.appendChild(taskDiv);
+  });
+
+  // Sanity check
+  const children = list.children.length;
+  if (tasks.length > 0 && children !== tasks.length) {
+    debugAlert('Debug: tasks saved but not rendered. tasks.length=' + tasks.length + ', DOM children=' + children);
+  }
 }
 
 // Markera/avmarkera task
@@ -95,10 +119,8 @@ function save() {
     localStorage.setItem('tasks', JSON.stringify(tasks));
     reset();
     render();
-    // Debugging feedback for APK/webview: alert success and show count
-    alert('Uppgift sparad — totalt: ' + tasks.length + ' items');
+    debugAlert('Uppgift sparad — totalt: ' + tasks.length + ' items');
   } catch (err) {
-    // Provide immediate feedback when something goes wrong in the APK
     alert('Fel vid sparande: ' + (err.message || err));
     console.error('Save error', err);
   }
@@ -153,16 +175,15 @@ function removeOldDoneTasks() {
 }
 
 
-
 // Event listeners
 openBtn.addEventListener('click', () => form.classList.remove('hide'));
 closeBtn.addEventListener('click', () => reset());
-form.addEventListener('submit', e => { 
-  e.preventDefault(); 
-  save(); 
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  save();
 });
 
-// Koppla knappar
+// Koppla knappar (export för konsol/test)
 window.editTask = editTask;
 window.delTask = delTask;
 
