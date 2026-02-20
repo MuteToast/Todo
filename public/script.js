@@ -7,9 +7,10 @@ const list = document.getElementById('list');
 const title = document.getElementById('title');
 const date  = document.getElementById('date');
 const desc  = document.getElementById('desc');
+const status = document.getElementById('status');
 
-// localStorage för tasks
-let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+// tasks kommer nu från server
+let tasks = [];
 let current = {};
 
 
@@ -17,6 +18,7 @@ let current = {};
 // Rendera tasks
 function render() {
   list.innerHTML = '';
+  if (status) status.textContent = '';
 
   tasks.sort((a, b) => {
     if(a.done && !b.done) return 1;
@@ -44,45 +46,94 @@ function render() {
 }
 
 // Markera/avmarkera task
-function toggleDone(id) {
+async function toggleDone(id) {
   const i = tasks.findIndex(t => t.id === id);
-  if(i !== -1){
-    tasks[i].done = !tasks[i].done;
+  if (i === -1) return;
+  tasks[i].done = !tasks[i].done;
+  if (tasks[i].done) tasks[i].doneDate = new Date().toISOString();
+  else delete tasks[i].doneDate;
 
-    if(tasks[i].done) {
-      tasks[i].doneDate = new Date().toISOString();
-    } else {
-      delete tasks[i].doneDate;
-    }
-
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-    render();
+  const res = await fetch(`/tasks/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(tasks[i])
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(()=>'');
+    if (status) status.textContent = `Kan inte uppdatera task: ${res.status} ${text}`;
+    return;
   }
+  tasks = await res.json();
+  render();
 }
 
 // Spara/uppdatera task
-function save() {
+async function save() {
   if(!title.value.trim()) { alert('Skriv en titel!'); return; }
   const obj = {
-    id: `${title.value.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}`,
+    id: current.id || `${title.value.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}`,
     title: title.value,
     date: date.value,
     desc: desc.value.trim(),
-    done: false
+    done: current.done || false,
+    doneDate: current.doneDate
   };
-  const i = tasks.findIndex(x => x.id === current.id);
-  if(i === -1) tasks.unshift(obj);
-  else tasks[i] = obj;
-  localStorage.setItem('tasks', JSON.stringify(tasks));
+
+  try {
+    if (current.id) {
+    // update
+    const res = await fetch(`/tasks/${current.id}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(obj)
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(()=>'');
+      if (status) status.textContent = `Kan inte spara: ${res.status} ${text}`;
+      return;
+    }
+    tasks = await res.json();
+  } else {
+    // create
+    const res = await fetch('/tasks', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(obj)
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(()=>'');
+      if (status) status.textContent = `Kan inte skapa task: ${res.status} ${text}`;
+      return;
+    }
+    tasks = await res.json();
+  }
+  } catch (err) {
+    if (status) status.textContent = 'Nätverksfel: ' + err.message;
+    // fallback: save to localStorage so user doesn't lose data
+    const fallback = JSON.parse(localStorage.getItem('tasks')||'[]');
+    fallback.unshift(obj);
+    localStorage.setItem('tasks', JSON.stringify(fallback));
+    tasks = fallback;
+  }
+
   reset();
   render();
 }
 
 // Ta bort task
-function delTask(id){
-  tasks = tasks.filter(t => t.id !== id);
-  localStorage.setItem('tasks', JSON.stringify(tasks));
-  render();
+async function delTask(id){
+  try {
+    const res = await fetch(`/tasks/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const text = await res.text().catch(()=>'');
+      if (status) status.textContent = `Kan inte ta bort: ${res.status} ${text}`;
+      return;
+    }
+    tasks = await res.json();
+    render();
+  } catch (err) {
+    if (status) status.textContent = 'Nätverksfel vid borttagning: ' + err.message;
+  }
 }
 
 // Redigera task
@@ -107,23 +158,24 @@ function reset(){
 
 function removeOldDoneTasks() {
   const today = new Date();
-  let changed = false;
-
-  tasks = tasks.filter(t => {
-    if (t.done && t.doneDate) {
-      const doneDate = new Date(t.doneDate);
-      if (doneDate.toDateString() !== today.toDateString()) {
-        changed = true;
-        return false;
+  (async () => {
+    const idsToRemove = [];
+    tasks.forEach(t => {
+      if (t.done && t.doneDate) {
+        const doneDate = new Date(t.doneDate);
+        if (doneDate.toDateString() !== today.toDateString()) {
+          idsToRemove.push(t.id);
+        }
       }
+    });
+    if (idsToRemove.length === 0) return;
+    for (const id of idsToRemove) {
+      await fetch(`/tasks/${id}`, { method: 'DELETE' });
     }
-    return true;
-  });
-
-  if (changed) {
-    localStorage.setItem('tasks', JSON.stringify(tasks));
+    const res = await fetch('/tasks');
+    tasks = await res.json();
     render();
-  }
+  })();
 }
 
 
@@ -137,9 +189,57 @@ form.addEventListener('submit', e => {
 });
 
 // Koppla knappar
-window.editTask = editTask;
-window.delTask = delTask;
+window.editTask = id => editTask(id);
+window.delTask = id => delTask(id);
 
-removeOldDoneTasks();
-render();
+// ladda tasks från server
+async function loadTasks(){
+  const candidates = ['/tasks','/tasks.json','/api/tasks','/list','/data/tasks','/tasks/'];
+  let loaded = false;
+  for (const endpoint of candidates) {
+    try {
+      const res = await fetch(endpoint);
+      if (!res.ok) {
+        // try next
+        const txt = await res.text().catch(()=>'');
+        if (status) status.textContent = `Försökte ${endpoint}: ${res.status} ${txt}`;
+        continue;
+      }
+
+      const data = await res.json().catch(async () => {
+        const txt = await res.text().catch(()=>'');
+        throw new Error('Inte JSON: ' + txt);
+      });
+
+      // accept either an array or an object with `tasks` property
+      if (Array.isArray(data)) {
+        tasks = data;
+      } else if (data && Array.isArray(data.tasks)) {
+        tasks = data.tasks;
+      } else {
+        // unknown format, show it and continue
+        if (status) status.textContent = `Okänt svar från ${endpoint}`;
+        continue;
+      }
+
+      if (status) status.textContent = `Laddade tasks från ${endpoint}`;
+      loaded = true;
+      render();
+      break;
+    } catch (err) {
+      console.warn('loadTasks try', endpoint, err);
+      if (status) status.textContent = `Fel när ${endpoint}: ${err.message}`;
+      // try next
+    }
+  }
+
+  if (!loaded) {
+    // fallback to localStorage
+    tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    if (tasks.length === 0 && status) status.textContent = 'Ingen serverkontakt — laddade tom lokal lista.';
+    render();
+  }
+}
+
+loadTasks();
 setInterval(removeOldDoneTasks, 5 * 60 * 1000);
