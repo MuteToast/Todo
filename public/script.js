@@ -16,7 +16,16 @@ let current = {};
 
 // Rendera tasks
 function render() {
-  list.innerHTML = '';
+  try {
+    list.innerHTML = '';
+
+    // Debug: log tasks length on render (useful inside APK)
+    console.log('render() called — tasks.length =', tasks.length);
+  } catch (err) {
+    alert('Fel i render(): ' + (err.message || err));
+    console.error('Render error', err);
+    return;
+  }
 
   tasks.sort((a, b) => {
     if(a.done && !b.done) return 1;
@@ -39,7 +48,16 @@ function render() {
       </div>
     `;
   });
-
+  // Debug check: verify DOM children match tasks length
+  try {
+    const children = list.children.length;
+    console.log('render() — DOM children:', children);
+    if (tasks.length > 0 && children !== tasks.length) {
+      alert('Debug: tasks saved but not rendered. tasks.length=' + tasks.length + ', DOM children=' + children);
+    }
+  } catch (err) {
+    console.error('Post-render check error', err);
+  }
 
 }
 
