@@ -16,6 +16,7 @@ let current = {};
 
 // Rendera tasks
 function render() {
+  console.log("LocalStorage raw:", localStorage.getItem("tasks"));
   // Reload tasks from localStorage to ensure we have the latest
   tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
   console.log('Rendering tasks:', tasks);
