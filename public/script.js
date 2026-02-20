@@ -22,6 +22,7 @@ function render() {
   console.log('Rendering tasks:', tasks);
   
   list.innerHTML = '';
+  list.style.border = "3px solid red";
 
   tasks.sort((a, b) => {
     if(a.done && !b.done) return 1;
