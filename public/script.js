@@ -62,20 +62,28 @@ function toggleDone(id) {
 
 // Spara/uppdatera task
 function save() {
-  if(!title.value.trim()) { alert('Skriv en titel!'); return; }
-  const obj = {
-    id: `${title.value.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}`,
-    title: title.value,
-    date: date.value,
-    desc: desc.value.trim(),
-    done: false
-  };
-  const i = tasks.findIndex(x => x.id === current.id);
-  if(i === -1) tasks.unshift(obj);
-  else tasks[i] = obj;
-  localStorage.setItem('tasks', JSON.stringify(tasks));
-  reset();
-  render();
+  try {
+    if(!title.value || !title.value.trim()) { alert('Skriv en titel!'); return; }
+    const obj = {
+      id: `${title.value.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}`,
+      title: title.value,
+      date: date.value,
+      desc: desc.value ? desc.value.trim() : '',
+      done: false
+    };
+    const i = tasks.findIndex(x => x.id === current.id);
+    if(i === -1) tasks.unshift(obj);
+    else tasks[i] = obj;
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    reset();
+    render();
+    // Debugging feedback for APK/webview: alert success and show count
+    alert('Uppgift sparad — totalt: ' + tasks.length + ' items');
+  } catch (err) {
+    // Provide immediate feedback when something goes wrong in the APK
+    alert('Fel vid sparande: ' + (err.message || err));
+    console.error('Save error', err);
+  }
 }
 
 // Ta bort task
