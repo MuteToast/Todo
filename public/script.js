@@ -49,17 +49,49 @@ function render() {
     return new Date(a.date) - new Date(b.date);
   });
 
+  // Use DOM methods instead of innerHTML concatenation (better compatibility in WebViews)
   tasks.forEach(t => {
-    list.innerHTML += `
-      <div class="task ${t.done ? "done": ""}" id="${t.id}">
-        <p><strong>${t.title}</strong></p>
-        <p>${t.date}</p>
-        <p>${t.desc}</p>
-        <button onclick="editTask('${t.id}')" class="btn" type="button">Ändra</button>
-        <button onclick="delTask('${t.id}')" class="btn" type="button">Ta bort</button>
-        <button onclick="toggleDone('${t.id}')" class="btn" type="button">Klart</button>
-      </div>
-    `;
+    const taskEl = document.createElement('div');
+    taskEl.className = 'task' + (t.done ? ' done' : '');
+    taskEl.id = t.id;
+
+    const titleP = document.createElement('p');
+    const strong = document.createElement('strong');
+    strong.textContent = t.title || '';
+    titleP.appendChild(strong);
+
+    const dateP = document.createElement('p');
+    dateP.textContent = t.date || '';
+
+    const descP = document.createElement('p');
+    descP.textContent = t.desc || '';
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'btn';
+    editBtn.textContent = 'Ändra';
+    editBtn.addEventListener('click', () => editTask(t.id));
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'btn';
+    delBtn.textContent = 'Ta bort';
+    delBtn.addEventListener('click', () => delTask(t.id));
+
+    const doneBtn = document.createElement('button');
+    doneBtn.type = 'button';
+    doneBtn.className = 'btn';
+    doneBtn.textContent = 'Klart';
+    doneBtn.addEventListener('click', () => toggleDone(t.id));
+
+    taskEl.appendChild(titleP);
+    taskEl.appendChild(dateP);
+    taskEl.appendChild(descP);
+    taskEl.appendChild(editBtn);
+    taskEl.appendChild(delBtn);
+    taskEl.appendChild(doneBtn);
+
+    list.appendChild(taskEl);
   });
   // Debug check: verify DOM children match tasks length
   try {
