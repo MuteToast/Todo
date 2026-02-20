@@ -16,6 +16,10 @@ let current = {};
 
 // Rendera tasks
 function render() {
+  // Reload tasks from localStorage to ensure we have the latest
+  tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+  console.log('Rendering tasks:', tasks);
+  
   list.innerHTML = '';
 
   tasks.sort((a, b) => {
@@ -27,8 +31,10 @@ function render() {
     return new Date(a.date) - new Date(b.date);
   });
 
+  // Build HTML string first, then set once
+  let html = '';
   tasks.forEach(t => {
-    list.innerHTML += `
+    html += `
       <div class="task ${t.done ? "done": ""}" id="${t.id}">
         <p><strong>${t.title}</strong></p>
         <p>${t.date}</p>
@@ -39,7 +45,7 @@ function render() {
       </div>
     `;
   });
-
+  list.innerHTML = html;
 
 }
 
@@ -139,7 +145,19 @@ form.addEventListener('submit', e => {
 // Koppla knappar
 window.editTask = editTask;
 window.delTask = delTask;
+window.toggleDone = toggleDone;
 
-removeOldDoneTasks();
-render();
+// Ensure DOM is ready and localStorage is available
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM ready, initializing app');
+    removeOldDoneTasks();
+    render();
+  });
+} else {
+  console.log('DOM already ready, initializing app');
+  removeOldDoneTasks();
+  render();
+}
+
 setInterval(removeOldDoneTasks, 5 * 60 * 1000);
