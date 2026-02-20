@@ -16,29 +16,7 @@ let current = {};
 
 // Rendera tasks
 function render() {
-  try {
-    list.innerHTML = '';
-
-    // Ensure a visible debug bar exists so APK users can see task data
-    let debugBar = document.getElementById('debugBar');
-    if (!debugBar) {
-      debugBar = document.createElement('div');
-      debugBar.id = 'debugBar';
-      debugBar.style.background = '#fffae6';
-      debugBar.style.border = '1px solid #ffd966';
-      debugBar.style.padding = '8px';
-      debugBar.style.marginBottom = '8px';
-      debugBar.style.fontSize = '0.9rem';
-      debugBar.style.color = '#333';
-      list.parentNode.insertBefore(debugBar, list);
-    }
-    // Debug: log tasks length on render (useful inside APK)
-    console.log('render() called — tasks.length =', tasks.length);
-  } catch (err) {
-    alert('Fel i render(): ' + (err.message || err));
-    console.error('Render error', err);
-    return;
-  }
+  list.innerHTML = '';
 
   tasks.sort((a, b) => {
     if(a.done && !b.done) return 1;
@@ -49,92 +27,19 @@ function render() {
     return new Date(a.date) - new Date(b.date);
   });
 
-  // Use DOM methods instead of innerHTML concatenation (better compatibility in WebViews)
   tasks.forEach(t => {
-    const taskEl = document.createElement('div');
-    taskEl.className = 'task' + (t.done ? ' done' : '');
-    taskEl.id = t.id;
-    // Inline styles to ensure visibility inside various WebViews
-    taskEl.style.display = 'block';
-    taskEl.style.width = '100%';
-    taskEl.style.background = '#fffbe6';
-    taskEl.style.borderLeft = '5px solid #25a55f';
-    taskEl.style.padding = '12px';
-    taskEl.style.borderRadius = '6px';
-    taskEl.style.fontSize = '1.1rem';
-    taskEl.style.color = '#000';
-    taskEl.style.boxSizing = 'border-box';
-
-    const titleP = document.createElement('p');
-    const strong = document.createElement('strong');
-    strong.textContent = t.title || '';
-    titleP.appendChild(strong);
-
-    const dateP = document.createElement('p');
-    dateP.textContent = t.date || '';
-
-    const descP = document.createElement('p');
-    descP.textContent = t.desc || '';
-
-    const editBtn = document.createElement('button');
-    editBtn.type = 'button';
-    editBtn.className = 'btn';
-    editBtn.textContent = 'Ändra';
-    editBtn.addEventListener('click', () => editTask(t.id));
-
-    const delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.className = 'btn';
-    delBtn.textContent = 'Ta bort';
-    delBtn.addEventListener('click', () => delTask(t.id));
-
-    const doneBtn = document.createElement('button');
-    doneBtn.type = 'button';
-    doneBtn.className = 'btn';
-    doneBtn.textContent = 'Klart';
-    doneBtn.addEventListener('click', () => toggleDone(t.id));
-
-    taskEl.appendChild(titleP);
-    taskEl.appendChild(dateP);
-    taskEl.appendChild(descP);
-    taskEl.appendChild(editBtn);
-    taskEl.appendChild(delBtn);
-    taskEl.appendChild(doneBtn);
-
-    list.appendChild(taskEl);
-    // If this is the newly added item, visually highlight it briefly
-    try {
-      if (window.__lastAddedId && t.id === window.__lastAddedId) {
-        taskEl.style.outline = '3px solid #ffd966';
-        taskEl.style.transition = 'outline 0.3s ease-in-out';
-        setTimeout(() => {
-          taskEl.style.outline = '';
-          try { delete window.__lastAddedId; } catch(e) { window.__lastAddedId = null; }
-        }, 3000);
-      }
-    } catch (e) {
-      console.error('Highlight new item failed', e);
-    }
+    list.innerHTML += `
+      <div class="task ${t.done ? "done": ""}" id="${t.id}">
+        <p><strong>${t.title}</strong></p>
+        <p>${t.date}</p>
+        <p>${t.desc}</p>
+        <button onclick="editTask('${t.id}')" class="btn" type="button">Ändra</button>
+        <button onclick="delTask('${t.id}')" class="btn" type="button">Ta bort</button>
+        <button onclick="toggleDone('${t.id}')" class="btn" type="button">Klart</button>
+      </div>
+    `;
   });
-  // Debug check: verify DOM children match tasks length
-  try {
-    const children = list.children.length;
-    console.log('render() — DOM children:', children);
-    // Update debug bar with tasks info (visible in APK)
-    try {
-      const debugBar = document.getElementById('debugBar');
-      if (debugBar) {
-        debugBar.textContent = 'tasks.length=' + tasks.length + ' | DOM children=' + children + ' | titles: ' + tasks.map(t => t.title).join(', ');
-      }
-    } catch (e) {
-      console.error('Could not update debugBar', e);
-    }
-    if (tasks.length > 0 && children !== tasks.length) {
-      alert('Debug: tasks saved but not rendered. tasks.length=' + tasks.length + ', DOM children=' + children);
-    }
-  } catch (err) {
-    console.error('Post-render check error', err);
-  }
+
 
 }
 
@@ -157,44 +62,20 @@ function toggleDone(id) {
 
 // Spara/uppdatera task
 function save() {
-  try {
-    if(!title.value || !title.value.trim()) { alert('Skriv en titel!'); return; }
-    const obj = {
-      id: `${title.value.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}`,
-      title: title.value,
-      date: date.value,
-      desc: desc.value ? desc.value.trim() : '',
-      done: false
-    };
-    const i = tasks.findIndex(x => x.id === current.id);
-    if(i === -1) tasks.unshift(obj);
-    else tasks[i] = obj;
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-    // remember id of new/updated item so we can scroll to it after render
-    const newId = obj.id;
-    // expose to render() so it can highlight the new element if needed
-    try { window.__lastAddedId = newId; } catch(e) { /* ignore */ }
-    reset();
-    render();
-    // Ensure the newly added task is visible in the WebView
-    try {
-      const el = document.getElementById(newId);
-      if (el && el.scrollIntoView) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else if (list && list.lastElementChild) {
-        // fallback: scroll list to bottom
-        list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }
-    } catch (e) {
-      console.error('Scroll to new item failed', e);
-    }
-    // Debugging feedback for APK/webview: alert success and show count
-    alert('Uppgift sparad — totalt: ' + tasks.length + ' items');
-  } catch (err) {
-    // Provide immediate feedback when something goes wrong in the APK
-    alert('Fel vid sparande: ' + (err.message || err));
-    console.error('Save error', err);
-  }
+  if(!title.value.trim()) { alert('Skriv en titel!'); return; }
+  const obj = {
+    id: `${title.value.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}`,
+    title: title.value,
+    date: date.value,
+    desc: desc.value.trim(),
+    done: false
+  };
+  const i = tasks.findIndex(x => x.id === current.id);
+  if(i === -1) tasks.unshift(obj);
+  else tasks[i] = obj;
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+  reset();
+  render();
 }
 
 // Ta bort task
