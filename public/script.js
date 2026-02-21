@@ -84,15 +84,17 @@ function save() {
   reset();
   render();
 
-  if (date.value) {
-    console.log("Trying to call Android bridge");
+if (date.value) {
+  console.log("Trying to call Android bridge");
 
-    if (typeof Android !== "undefined") {
-        console.log("Android bridge exists");
-        Android.scheduleNotification(title.value, date.value);
-    } else {
-        console.log("Android bridge NOT found");
-    }
+  if (typeof Android !== "undefined") {
+      console.log("Android bridge exists");
+      Android.scheduleNotification(title.value, date.value);
+  } else {
+      console.log("Android bridge NOT found");
+  }
+} else {
+  console.log("No date set, skipping Android notification");
 }
 }
 
