@@ -85,9 +85,15 @@ function save() {
   render();
 
   if (date.value) {
-    console.log("Calling Android bridge...");
-    Android.scheduleNotification(title.value, date.value);
-  }
+    console.log("Trying to call Android bridge");
+
+    if (typeof Android !== "undefined") {
+        console.log("Android bridge exists");
+        Android.scheduleNotification(title.value, date.value);
+    } else {
+        console.log("Android bridge NOT found");
+    }
+}
 }
 
 // Ta bort task
