@@ -81,23 +81,24 @@ function save() {
   if(i === -1) tasks.unshift(obj);
   else tasks[i] = obj;
   localStorage.setItem('tasks', JSON.stringify(tasks));
-  reset();
-  render();
 
-if (date.value.trim() !== "") {
+  if (date.value.trim() !== "") {
   console.log("Trying to call Android bridge");
 
-  if (typeof Android !== "undefined") {
-      console.log("Android bridge exists");
-      Android.scheduleNotification(title.value, date.value);
+    if (typeof Android !== "undefined") {
+        console.log("Android bridge exists");
+        Android.scheduleNotification(title.value, date.value);
+    } else {
+        console.log("Android bridge NOT found");
+    }
   } else {
-      console.log("Android bridge NOT found");
+    console.log("No date set, skipping Android notification");
+    console.log("Raw date value:", date.value);
+    console.log("Raw input element:", date);
   }
-} else {
-  console.log("No date set, skipping Android notification");
-  console.log("Raw date value:", date.value);
-  console.log("Raw input element:", date);
-}
+
+  reset();
+  render();
 }
 
 // Ta bort task
