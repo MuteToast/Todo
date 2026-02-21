@@ -95,6 +95,8 @@ if (date.value) {
   }
 } else {
   console.log("No date set, skipping Android notification");
+  console.log("Raw date value:", date.value);
+  console.log("Raw input element:", date);
 }
 }
 
