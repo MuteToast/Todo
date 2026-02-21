@@ -85,6 +85,7 @@ function save() {
   render();
 
   if (date.value) {
+    console.log("Calling Android bridge...");
     Android.scheduleNotification(title.value, date.value);
   }
 }
