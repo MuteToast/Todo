@@ -162,7 +162,13 @@ window.toggleDone = toggleDone;
 // Ensure DOM is ready and localStorage is available
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-     console.log(typeof Android);
+    if (typeof Android !== "undefined") {
+        console.log("Android bridge exists");
+        Android.scheduleNotification(title.value, date.value);
+    } else {
+        console.log("Android bridge NOT found");
+    }
+    console.log(typeof Android);
     console.log('DOM ready, initializing app');
     removeOldDoneTasks();
     render();
