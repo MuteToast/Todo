@@ -86,6 +86,7 @@ function save() {
 
   if (date.value) {
     console.log("Trying to call Android bridge");
+    console.log(typeof Android);
 
     if (typeof Android !== "undefined") {
         console.log("Android bridge exists");
@@ -168,6 +169,7 @@ if (document.readyState === 'loading') {
   });
 } else {
   console.log('DOM already ready, initializing app');
+  console.log(typeof Android);
   removeOldDoneTasks();
   render();
 }
