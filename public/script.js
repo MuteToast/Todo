@@ -83,6 +83,10 @@ function save() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
   reset();
   render();
+
+  if (date.value) {
+    Android.scheduleNotification(title.value, date.value);
+  }
 }
 
 // Ta bort task
