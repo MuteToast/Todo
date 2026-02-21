@@ -164,6 +164,8 @@ window.toggleDone = toggleDone;
 // Ensure DOM is ready and localStorage is available
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
+    console.log("Raw date value:", date.value);
+    console.log("Raw input element:", date);
     if (typeof Android !== "undefined") {
         console.log("Android bridge exists");
         Android.scheduleNotification(title.value, date.value);
