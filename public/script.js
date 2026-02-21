@@ -84,7 +84,7 @@ function save() {
   reset();
   render();
 
-if (date.value) {
+if (date.value.trim() !== "") {
   console.log("Trying to call Android bridge");
 
   if (typeof Android !== "undefined") {
