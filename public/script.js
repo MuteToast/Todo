@@ -86,7 +86,6 @@ function save() {
 
   if (date.value) {
     console.log("Trying to call Android bridge");
-    console.log(typeof Android);
 
     if (typeof Android !== "undefined") {
         console.log("Android bridge exists");
@@ -163,13 +162,13 @@ window.toggleDone = toggleDone;
 // Ensure DOM is ready and localStorage is available
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
+     console.log(typeof Android);
     console.log('DOM ready, initializing app');
     removeOldDoneTasks();
     render();
   });
 } else {
   console.log('DOM already ready, initializing app');
-  console.log(typeof Android);
   removeOldDoneTasks();
   render();
 }
