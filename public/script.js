@@ -7,7 +7,6 @@ const list = document.getElementById('list');
 const title = document.getElementById('title');
 const date  = document.getElementById('date');
 const desc  = document.getElementById('desc');
-const fab = document.getElementById('fab');
 const modal = document.getElementById('modal');
 
 // localStorage för tasks
@@ -127,7 +126,6 @@ function reset(){
   desc.value = '';
   saveBtn.textContent = 'Lägg till';
   modal.classList.add('hide');
-  document.body.classList.remove('modal-open');
   current = {};
 }
 
@@ -155,10 +153,7 @@ function removeOldDoneTasks() {
 
 
 // Event listeners
-fab.addEventListener('click', () => {
-  modal.classList.remove('hide');
-  document.body.classList.add('modal-open');
-});
+openBtn.addEventListener('click', () => modal.classList.remove('hide'));
 closeBtn.addEventListener('click', () => reset());
 form.addEventListener('submit', e => { 
   e.preventDefault(); 
