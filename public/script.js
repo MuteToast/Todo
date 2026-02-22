@@ -1,103 +1,140 @@
-// Konstanter
+// ===== DOM REFERENCES =====
 const form = document.getElementById('form');
-const openBtn = document.getElementById('openBtn');
 const closeBtn = document.getElementById('closeBtn');
 const saveBtn = document.getElementById('saveBtn');
 const list = document.getElementById('list');
 const title = document.getElementById('title');
 const date  = document.getElementById('date');
 const desc  = document.getElementById('desc');
+const fab = document.getElementById('fab');
 const modal = document.getElementById('modal');
 
-// localStorage för tasks
+// ===== STORAGE =====
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 let current = {};
 
-
-
-// Rendera tasks
+// ===== RENDER TASKS =====
 function render() {
-  console.log("LocalStorage raw:", localStorage.getItem("tasks"));
-  // Reload tasks from localStorage to ensure we have the latest
+
   tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-  console.log('Rendering tasks:', tasks);
-  
+
   list.innerHTML = '';
 
   tasks.sort((a, b) => {
-    if(a.done && !b.done) return 1;
-    if(!a.done && b.done) return -1;
-    if(!a.date && !b.date) return 0;
-    if(!a.date) return 1;
-    if(!b.date) return -1;
+    if (a.done && !b.done) return 1;
+    if (!a.done && b.done) return -1;
+    if (!a.date && !b.date) return 0;
+    if (!a.date) return 1;
+    if (!b.date) return -1;
     return new Date(a.date) - new Date(b.date);
   });
 
-  // Build HTML string first, then set once
   let html = '';
+
   tasks.forEach(t => {
     html += `
       <div class="task ${t.done ? "done": ""}" id="${t.id}">
         <p><strong>${t.title}</strong></p>
-        <p>${t.date}</p>
-        <p>${t.desc}</p>
+        <p>${t.date || ''}</p>
+        <p>${t.desc || ''}</p>
         <button onclick="editTask('${t.id}')" class="btn" type="button">Ändra</button>
         <button onclick="delTask('${t.id}')" class="btn" type="button">Ta bort</button>
         <button onclick="toggleDone('${t.id}')" class="btn" type="button">Klart</button>
       </div>
     `;
   });
+
   list.innerHTML = html;
-  list.requestLayout?.();
 }
 
-// Markera/avmarkera task
+// ===== TOGGLE DONE =====
 function toggleDone(id) {
+
   const i = tasks.findIndex(t => t.id === id);
-  if(i !== -1){
-    tasks[i].done = !tasks[i].done;
+  if (i === -1) return;
 
-    if (tasks[i].done && typeof Android !== "undefined") {
-      Android.cancelNotification(tasks[i].id);
+  tasks[i].done = !tasks[i].done;
+
+  if (tasks[i].done) {
+    tasks[i].doneDate = new Date().toISOString();
+
+    // Cancel Android reminders
+    if (typeof Android !== "undefined") {
+      Android.cancelNotification(id);
     }
 
-    if(tasks[i].done) {
-      tasks[i].doneDate = new Date().toISOString();
-    } else {
-      delete tasks[i].doneDate;
-    }
+  } else {
+    delete tasks[i].doneDate;
 
-    localStorage.setItem('tasks', JSON.stringify(tasks));
-    render();
+    // Reschedule if date exists
+    if (tasks[i].date && typeof Android !== "undefined") {
+      Android.scheduleNotification(
+        tasks[i].id,
+        tasks[i].title,
+        tasks[i].date
+      );
+    }
   }
+
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+  render();
 }
 
-// Spara/uppdatera task
+// ===== SAVE / UPDATE TASK =====
 function save() {
-  if(!title.value.trim()) { alert('Skriv en titel!'); return; }
-  const obj = {
-    id: `${title.value.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}`,
-    title: title.value,
-    date: date.value,
-    desc: desc.value.trim(),
-    done: false
-  };
+
+  if (!title.value.trim()) {
+    alert('Skriv en titel!');
+    return;
+  }
+
+  let obj;
+
   const i = tasks.findIndex(x => x.id === current.id);
-  if(i === -1) tasks.unshift(obj);
-  else tasks[i] = obj;
+
+  if (i === -1) {
+    // New task
+    obj = {
+      id: `${title.value.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}`,
+      title: title.value,
+      date: date.value,
+      desc: desc.value.trim(),
+      done: false
+    };
+
+    tasks.unshift(obj);
+
+  } else {
+    // Update existing task
+    obj = {
+      ...tasks[i],
+      title: title.value,
+      date: date.value,
+      desc: desc.value.trim()
+    };
+
+    tasks[i] = obj;
+
+    // Cancel old notifications before rescheduling
+    if (typeof Android !== "undefined") {
+      Android.cancelNotification(obj.id);
+    }
+  }
+
   localStorage.setItem('tasks', JSON.stringify(tasks));
 
-  if (date.value.trim() !== "") {
-    if (typeof Android !== "undefined") {
-        Android.scheduleNotification(obj.id, title.value, date.value);
-    }
+  // Schedule notification if date exists
+  if (obj.date && typeof Android !== "undefined") {
+    Android.scheduleNotification(obj.id, obj.title, obj.date);
   }
+
   reset();
   render();
 }
 
-// Ta bort task
+// ===== DELETE TASK =====
 function delTask(id){
+
   tasks = tasks.filter(t => t.id !== id);
   localStorage.setItem('tasks', JSON.stringify(tasks));
 
@@ -108,28 +145,46 @@ function delTask(id){
   render();
 }
 
-// Redigera task
+// ===== EDIT TASK =====
 function editTask(id){
+
   current = tasks.find(t => t.id === id) || {};
+
   title.value = current.title || '';
   date.value = current.date || '';
   desc.value = current.desc || '';
+
   saveBtn.textContent = 'Uppdatera';
-  modal.classList.remove('hide');
-  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  openModal();
 }
 
-// Återställ formulär
-function reset(){
+// ===== MODAL CONTROL =====
+function openModal() {
+  modal.classList.remove('hide');
+  document.body.classList.add('modal-open');
+}
+
+function reset() {
   title.value = '';
   date.value = '';
   desc.value = '';
   saveBtn.textContent = 'Lägg till';
   modal.classList.add('hide');
+  document.body.classList.remove('modal-open');
   current = {};
 }
 
+// Close when clicking outside
+modal.addEventListener('click', function(e){
+  if (e.target === modal) {
+    reset();
+  }
+});
+
+// ===== REMOVE OLD DONE TASKS =====
 function removeOldDoneTasks() {
+
   const today = new Date();
   let changed = false;
 
@@ -138,6 +193,11 @@ function removeOldDoneTasks() {
       const doneDate = new Date(t.doneDate);
       if (doneDate.toDateString() !== today.toDateString()) {
         changed = true;
+
+        if (typeof Android !== "undefined") {
+          Android.cancelNotification(t.id);
+        }
+
         return false;
       }
     }
@@ -150,32 +210,24 @@ function removeOldDoneTasks() {
   }
 }
 
+// ===== EVENT LISTENERS =====
+fab.addEventListener('click', openModal);
+closeBtn.addEventListener('click', reset);
 
-
-// Event listeners
-openBtn.addEventListener('click', () => modal.classList.remove('hide'));
-closeBtn.addEventListener('click', () => reset());
-form.addEventListener('submit', e => { 
-  e.preventDefault(); 
-  save(); 
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  save();
 });
 
-// Koppla knappar
+// Make functions globally accessible
 window.editTask = editTask;
 window.delTask = delTask;
 window.toggleDone = toggleDone;
 
-// Ensure DOM is ready and localStorage is available
+// ===== INIT =====
 window.addEventListener("load", function () {
-  console.log("App fully loaded");
   removeOldDoneTasks();
   render();
-});
-
-modal.addEventListener('click', function(e) {
-  if (e.target === modal) {
-    reset();
-  }
 });
 
 setInterval(removeOldDoneTasks, 5 * 60 * 1000);

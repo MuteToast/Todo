@@ -143,10 +143,36 @@ h1 {
   text-decoration: line-through;
 }
 
+/* ===== Floating Action Button ===== */
+
+.fab {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: var(--green);
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  z-index: 1000;
+  transition: 0.2s;
+}
+
+.fab:hover {
+  background: var(--blue);
+  transform: scale(1.1);
+}
+
+/* ===== Modal Overlay ===== */
+
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -155,14 +181,19 @@ h1 {
 
 .modal-content {
   width: 90%;
-  max-width: 450px;
-  background: #fff;
-  border-radius: 10px;
+  max-width: 420px;
+  background: white;
+  border-radius: 12px;
   padding: 20px;
-  animation: pop 0.2s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 
-@keyframes pop {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Prevent scrolling when modal open */
+body.modal-open {
+  overflow: hidden;
 }

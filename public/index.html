@@ -14,18 +14,21 @@
 <main>
   <h1> My ToDo-List</h1>
   <div class="app">
-    <button id="openBtn" class="btn big" type="button">+</button>
 
     <div id="modal" class="modal hide">
       <div class="modal-content">
         <form id="form">
-          <button id="closeBtn" type="button" class="close" aria-label="Stäng">X</button>
+          <button id="closeBtn" type="button" class="close">X</button>
+
           <label for="title">Titel:</label>
           <input id="title" type="text" required>
+
           <label for="date">Datum:</label>
           <input id="date" type="datetime-local">
+
           <label for="desc">Beskrivning:</label>
-          <input id="desc" rows="3"></input>
+          <input id="desc">
+
           <button id="saveBtn" class="btn big" type="submit">Lägg till</button>
         </form>
       </div>
@@ -35,5 +38,6 @@
 </main>
 
 <script src="script.js"></script>
+<button id="fab" class="fab">+</button>
 </body>
 </html>
