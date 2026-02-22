@@ -8,6 +8,11 @@ const title = document.getElementById('title');
 const date  = document.getElementById('date');
 const desc  = document.getElementById('desc');
 const modal = document.getElementById('modal');
+const confirmModal = document.getElementById('confirmModal');
+const confirmYes = document.getElementById('confirmYes');
+const confirmNo = document.getElementById('confirmNo');
+
+let taskToDelete = null;
 
 // localStorage för tasks
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -98,15 +103,32 @@ function save() {
 
 // Ta bort task
 function delTask(id){
-  tasks = tasks.filter(t => t.id !== id);
+  taskToDelete = id;
+  confirmModal.classList.remove('hide');
+  document.body.style.overflow = "hidden";
+}
+
+confirmYes.addEventListener('click', () => {
+  if (!taskToDelete) return;
+
+  tasks = tasks.filter(t => t.id !== taskToDelete);
   localStorage.setItem('tasks', JSON.stringify(tasks));
 
   if (typeof Android !== "undefined") {
-    Android.cancelNotification(id);
+    Android.cancelNotification(taskToDelete);
   }
 
+  taskToDelete = null;
+  confirmModal.classList.add('hide');
+  document.body.style.overflow = "";
   render();
-}
+});
+
+confirmNo.addEventListener('click', () => {
+  taskToDelete = null;
+  confirmModal.classList.add('hide');
+  document.body.style.overflow = "";
+});
 
 // Redigera task
 function editTask(id){
