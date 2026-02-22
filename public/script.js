@@ -138,7 +138,6 @@ function editTask(id){
   desc.value = current.desc || '';
   saveBtn.textContent = 'Uppdatera';
   modal.classList.remove('hide');
-  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 // Återställ formulär
