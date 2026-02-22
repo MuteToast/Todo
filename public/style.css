@@ -159,6 +159,7 @@ h1 {
   width: 90%;
   max-width: 450px;
   background: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   border-radius: 10px;
   padding: 20px;
   animation: pop 0.2s ease-out;
@@ -191,4 +192,26 @@ h1 {
 .fab:hover {
   background: var(--blue);
   transform: scale(1.1);
+}
+
+/* ===== Confirm Modal Styling ===== */
+
+.confirm-box {
+  text-align: center;
+}
+
+.confirm-text {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  color: var(--blue);
+}
+
+.confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.confirm-buttons .btn {
+  min-width: 90px;
 }
