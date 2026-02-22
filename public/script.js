@@ -56,6 +56,10 @@ function toggleDone(id) {
   if(i !== -1){
     tasks[i].done = !tasks[i].done;
 
+    if (tasks[i].done && typeof Android !== "undefined") {
+      Android.cancelNotification(tasks[i].id);
+    }
+
     if(tasks[i].done) {
       tasks[i].doneDate = new Date().toISOString();
     } else {
@@ -83,20 +87,10 @@ function save() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 
   if (date.value.trim() !== "") {
-  console.log("Trying to call Android bridge");
-
     if (typeof Android !== "undefined") {
-        console.log("Android bridge exists");
-        Android.scheduleNotification(title.value, date.value);
-    } else {
-        console.log("Android bridge NOT found");
+        Android.scheduleNotification(obj.id, title.value, date.value);
     }
-  } else {
-    console.log("No date set, skipping Android notification");
-    console.log("Raw date value:", date.value);
-    console.log("Raw input element:", date);
   }
-
   reset();
   render();
 }
@@ -105,6 +99,11 @@ function save() {
 function delTask(id){
   tasks = tasks.filter(t => t.id !== id);
   localStorage.setItem('tasks', JSON.stringify(tasks));
+
+  if (typeof Android !== "undefined") {
+    Android.cancelNotification(id);
+  }
+  
   render();
 }
 
@@ -165,25 +164,10 @@ window.delTask = delTask;
 window.toggleDone = toggleDone;
 
 // Ensure DOM is ready and localStorage is available
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log("Raw date value:", date.value);
-    console.log("Raw input element:", date);
-    if (typeof Android !== "undefined") {
-        console.log("Android bridge exists");
-        Android.scheduleNotification(title.value, date.value);
-    } else {
-        console.log("Android bridge NOT found");
-    }
-    console.log(typeof Android);
-    console.log('DOM ready, initializing app');
-    removeOldDoneTasks();
-    render();
-  });
-} else {
-  console.log('DOM already ready, initializing app');
+window.addEventListener("load", function () {
+  console.log("App fully loaded");
   removeOldDoneTasks();
   render();
-}
+});
 
 setInterval(removeOldDoneTasks, 5 * 60 * 1000);
