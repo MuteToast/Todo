@@ -7,6 +7,7 @@ const list = document.getElementById('list');
 const title = document.getElementById('title');
 const date  = document.getElementById('date');
 const desc  = document.getElementById('desc');
+const modal = document.getElementById('modal');
 
 // localStorage för tasks
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -103,7 +104,7 @@ function delTask(id){
   if (typeof Android !== "undefined") {
     Android.cancelNotification(id);
   }
-  
+
   render();
 }
 
@@ -114,7 +115,8 @@ function editTask(id){
   date.value = current.date || '';
   desc.value = current.desc || '';
   saveBtn.textContent = 'Uppdatera';
-  form.classList.remove('hide');
+  modal.classList.remove('hide');
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 // Återställ formulär
@@ -123,7 +125,7 @@ function reset(){
   date.value = '';
   desc.value = '';
   saveBtn.textContent = 'Lägg till';
-  form.classList.add('hide');
+  modal.classList.add('hide');
   current = {};
 }
 
@@ -151,7 +153,7 @@ function removeOldDoneTasks() {
 
 
 // Event listeners
-openBtn.addEventListener('click', () => form.classList.remove('hide'));
+openBtn.addEventListener('click', () => modal.classList.remove('hide'));
 closeBtn.addEventListener('click', () => reset());
 form.addEventListener('submit', e => { 
   e.preventDefault(); 
@@ -168,6 +170,12 @@ window.addEventListener("load", function () {
   console.log("App fully loaded");
   removeOldDoneTasks();
   render();
+});
+
+modal.addEventListener('click', function(e) {
+  if (e.target === modal) {
+    reset();
+  }
 });
 
 setInterval(removeOldDoneTasks, 5 * 60 * 1000);
