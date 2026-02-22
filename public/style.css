@@ -166,3 +166,27 @@ h1 {
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* ===== Floating Action Button ===== */
+
+.fab {
+  position: fixed;
+  bottom: 25px;
+  left: 25px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  font-size: 2rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 1000;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.fab:hover {
+  background: var(--blue);
+  transform: scale(1.1);
+}

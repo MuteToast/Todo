@@ -1,6 +1,6 @@
 // Konstanter
 const form = document.getElementById('form');
-const openBtn = document.getElementById('openBtn');
+const fab = document.getElementById('fab');
 const closeBtn = document.getElementById('closeBtn');
 const saveBtn = document.getElementById('saveBtn');
 const list = document.getElementById('list');
@@ -126,6 +126,7 @@ function reset(){
   desc.value = '';
   saveBtn.textContent = 'Lägg till';
   modal.classList.add('hide');
+  document.body.style.overflow = "";
   current = {};
 }
 
@@ -153,7 +154,10 @@ function removeOldDoneTasks() {
 
 
 // Event listeners
-openBtn.addEventListener('click', () => modal.classList.remove('hide'));
+fab.addEventListener('click', () => {
+  modal.classList.remove('hide');
+  document.body.style.overflow = "hidden";
+});
 closeBtn.addEventListener('click', () => reset());
 form.addEventListener('submit', e => { 
   e.preventDefault(); 
