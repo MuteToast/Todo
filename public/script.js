@@ -62,13 +62,17 @@ function render() {
       return;
     }
 
-    if (isOverdue(t.date) && !t.done) {
+    const taskDate = new Date(t.date);
+    const taskDay = taskDate.toDateString();   // ← THIS WAS MISSING
+
+    if (isOverdue(t.date)) {
       groups.overdue.push(t);
     }
 
     else if (taskDay === todayStr) {
       groups.today.push(t);
     }
+
     else {
       const tomorrow = new Date();
       tomorrow.setDate(now.getDate() + 1);

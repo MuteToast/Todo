@@ -239,7 +239,7 @@ h1 {
 .group-content {
   overflow: hidden;
   max-height: 0;
-  transition: max-height 0.3s ease;
+  transition: max-height 0.35s cubic-bezier(.4,0,.2,1);
 }
 
 .group-content.open {
