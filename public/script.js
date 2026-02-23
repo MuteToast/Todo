@@ -112,7 +112,7 @@ function renderGroup(title, tasks, defaultOpen = false) {
   header.className = "group-header";
 
   header.innerHTML = `
-    <span class="arrow">▶</span>
+    <span class="arrow">></span>
     <span>${title} (${tasks.length})</span>
   `;
 
