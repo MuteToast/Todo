@@ -22,38 +22,115 @@ let current = {};
 
 // Rendera tasks
 function render() {
-  console.log("LocalStorage raw:", localStorage.getItem("tasks"));
-  // Reload tasks from localStorage to ensure we have the latest
+
   tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-  console.log('Rendering tasks:', tasks);
-  
   list.innerHTML = '';
 
-  tasks.sort((a, b) => {
-    if(a.done && !b.done) return 1;
-    if(!a.done && b.done) return -1;
-    if(!a.date && !b.date) return 0;
-    if(!a.date) return 1;
-    if(!b.date) return -1;
-    return new Date(a.date) - new Date(b.date);
+  const now = new Date();
+  const todayStr = now.toDateString();
+
+  let groups = {
+    overdue: [],
+    today: [],
+    tomorrow: [],
+    future: {},
+    nodate: [],
+    completed: []
+  };
+
+  tasks.forEach(t => {
+
+    if (t.done) {
+      groups.completed.push(t);
+      return;
+    }
+
+    if (!t.date) {
+      groups.nodate.push(t);
+      return;
+    }
+
+    const taskDate = new Date(t.date);
+    const taskDay = taskDate.toDateString();
+
+    if (taskDate < now && !t.done) {
+      groups.overdue.push(t);
+    }
+    else if (taskDay === todayStr) {
+      groups.today.push(t);
+    }
+    else {
+      const tomorrow = new Date();
+      tomorrow.setDate(now.getDate() + 1);
+
+      if (taskDay === tomorrow.toDateString()) {
+        groups.tomorrow.push(t);
+      }
+      else {
+        const key = taskDay;
+        if (!groups.future[key]) groups.future[key] = [];
+        groups.future[key].push(t);
+      }
+    }
   });
 
-  // Build HTML string first, then set once
-  let html = '';
-  tasks.forEach(t => {
-    html += `
-      <div class="task ${t.done ? "done": ""}" id="${t.id}">
-        <p><strong>${t.title}</strong></p>
-        <p>${t.date}</p>
-        <p>${t.desc}</p>
-        <button onclick="editTask('${t.id}')" class="btn" type="button">Ändra</button>
-        <button onclick="delTask('${t.id}')" class="btn" type="button">Ta bort</button>
-        <button onclick="toggleDone('${t.id}')" class="btn" type="button">Klart</button>
-      </div>
-    `;
+  // Render in order
+  renderGroup("🔴 Overdue", groups.overdue, true);
+  renderGroup("📅 Today", groups.today);
+  renderGroup("🌤 Tomorrow", groups.tomorrow);
+
+  Object.keys(groups.future).sort().forEach(date => {
+    renderGroup("📆 " + date, groups.future[date]);
   });
-  list.innerHTML = html;
-  list.requestLayout?.();
+
+  renderGroup("📝 No Date", groups.nodate);
+  renderGroup("✅ Completed", groups.completed);
+}
+
+function renderGroup(title, tasks, open = false) {
+
+  if (!tasks || tasks.length === 0) return;
+
+  const group = document.createElement("div");
+  group.className = "group";
+
+  const header = document.createElement("div");
+  header.className = "group-header";
+  header.textContent = title;
+
+  const content = document.createElement("div");
+  content.className = "group-content";
+  if (!open) content.classList.add("hide");
+
+  header.addEventListener("click", () => {
+    content.classList.toggle("hide");
+  });
+
+  tasks.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "task";
+    if (t.done) div.classList.add("done");
+
+    // Overdue style
+    if (!t.done && t.date && new Date(t.date) < new Date()) {
+      div.classList.add("overdue");
+    }
+
+    div.innerHTML = `
+      <p><strong>${t.title}</strong></p>
+      <p>${t.date || ""}</p>
+      <p>${t.desc || ""}</p>
+      <button onclick="editTask('${t.id}')" class="btn">Ändra</button>
+      <button onclick="delTask('${t.id}')" class="btn">Ta bort</button>
+      <button onclick="toggleDone('${t.id}')" class="btn">Klart</button>
+    `;
+
+    content.appendChild(div);
+  });
+
+  group.appendChild(header);
+  group.appendChild(content);
+  list.appendChild(group);
 }
 
 // Markera/avmarkera task

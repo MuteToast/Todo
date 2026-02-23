@@ -215,3 +215,28 @@ h1 {
 .confirm-buttons .btn {
   min-width: 90px;
 }
+
+/* ===== Groups ===== */
+
+.group {
+  margin-bottom: 15px;
+}
+
+.group-header {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--blue);
+  cursor: pointer;
+  padding: 5px 0;
+}
+
+.group-content {
+  margin-top: 8px;
+}
+
+/* Overdue tasks */
+
+.task.overdue {
+  border-left: 5px solid red;
+  background: #ffeaea;
+}
