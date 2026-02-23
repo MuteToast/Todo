@@ -229,10 +229,11 @@ h1 {
   font-size: 1.1rem;
   color: var(--blue);
   cursor: pointer;
-  padding: 8px 0;
+  padding: 10px 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  overflow: visible; /* important */
 }
 
 .group-content {
@@ -246,8 +247,11 @@ h1 {
 }
 
 .arrow {
-  transition: transform 0.3s ease;
-  font-size: 0.8rem;
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  transform-origin: center;
 }
 
 .arrow.rotate {

@@ -14,11 +14,23 @@ const confirmNo = document.getElementById('confirmNo');
 
 let taskToDelete = null;
 
+let groupState = JSON.parse(localStorage.getItem("groupState") || "{}");
+
 // localStorage för tasks
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 let current = {};
 
+function isOverdue(taskDateString) {
+  if (!taskDateString) return false;
 
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const taskDay = new Date(taskDateString);
+  taskDay.setHours(0,0,0,0);
+
+  return taskDay < today;
+}
 
 // Rendera tasks
 function render() {
@@ -50,18 +62,10 @@ function render() {
       return;
     }
 
-    const taskDate = new Date(t.date);
-    const taskDay = taskDate.toDateString();
-
-    const today = new Date();
-    today.setHours(0,0,0,0);
-
-    const taskDayOnly = new Date(t.date);
-    taskDayOnly.setHours(0,0,0,0);
-
-    if (taskDayOnly < today && !t.done) {
+    if (isOverdue(t.date) && !t.done) {
       groups.overdue.push(t);
     }
+
     else if (taskDay === todayStr) {
       groups.today.push(t);
     }
@@ -82,7 +86,7 @@ function render() {
 
   // Render in order
   renderGroup("Overdue", groups.overdue, true);
-  renderGroup("Today", groups.today);
+  renderGroup("Today", groups.today, true);
   renderGroup("Tomorrow", groups.tomorrow);
 
   Object.keys(groups.future).sort().forEach(date => {
@@ -93,7 +97,7 @@ function render() {
   renderGroup("Completed", groups.completed);
 }
 
-function renderGroup(title, tasks, open = false) {
+function renderGroup(title, tasks, defaultOpen = false) {
 
   if (!tasks || tasks.length === 0) return;
 
@@ -102,50 +106,47 @@ function renderGroup(title, tasks, open = false) {
 
   const header = document.createElement("div");
   header.className = "group-header";
+
   header.innerHTML = `
-  <span class="arrow">></span>
-  <span>${title}</span>
+    <span class="arrow">▶</span>
+    <span>${title} (${tasks.length})</span>
   `;
 
   const content = document.createElement("div");
   content.className = "group-content";
-  if (open) {
+
+  const isOpen = groupState[title] ?? defaultOpen;
+
+  if (isOpen) {
     content.classList.add("open");
-    setTimeout(() => {
-      header.querySelector(".arrow").classList.add("rotate");
-    }, 0);
+    header.querySelector(".arrow").classList.add("rotate");
   }
 
   header.addEventListener("click", () => {
     content.classList.toggle("open");
     header.querySelector(".arrow").classList.toggle("rotate");
+
+    groupState[title] = content.classList.contains("open");
+    localStorage.setItem("groupState", JSON.stringify(groupState));
   });
 
   tasks.forEach(t => {
     const div = document.createElement("div");
     div.className = "task";
+
     if (t.done) div.classList.add("done");
 
-    // Overdue style
-    if (!t.done && t.date) {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-
-      const taskDayOnly = new Date(t.date);
-      taskDayOnly.setHours(0,0,0,0);
-
-      if (taskDayOnly < today) {
-        div.classList.add("overdue");
-      }
+    if (!t.done && isOverdue(t.date)) {
+      div.classList.add("overdue");
     }
 
     div.innerHTML = `
       <p><strong>${t.title}</strong></p>
       <p>${t.date || ""}</p>
       <p>${t.desc || ""}</p>
-      <button onclick="editTask('${t.id}')" class="btn">Ändra</button>
-      <button onclick="delTask('${t.id}')" class="btn">Ta bort</button>
-      <button onclick="toggleDone('${t.id}')" class="btn">Klart</button>
+      <button onclick="editTask('${t.id}')" class="btn">Change</button>
+      <button onclick="delTask('${t.id}')" class="btn">Delete</button>
+      <button onclick="toggleDone('${t.id}')" class="btn">Done</button>
     `;
 
     content.appendChild(div);
@@ -179,24 +180,42 @@ function toggleDone(id) {
 
 // Spara/uppdatera task
 function save() {
-  if(!title.value.trim()) { alert('Skriv en titel!'); return; }
+  if (!title.value.trim()) { 
+    alert('Skriv en titel!'); 
+    return; 
+  }
+
+  const isEditing = current.id !== undefined;
+
   const obj = {
-    id: `${title.value.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}`,
-    title: title.value,
+    id: isEditing ? current.id : `${Date.now()}`,
+    title: title.value.trim(),
     date: date.value,
     desc: desc.value.trim(),
     done: false
   };
+
   const i = tasks.findIndex(x => x.id === current.id);
-  if(i === -1) tasks.unshift(obj);
-  else tasks[i] = obj;
+
+  if (i === -1) {
+    tasks.unshift(obj);
+  } else {
+    obj.done = tasks[i].done;
+    obj.doneDate = tasks[i].doneDate;
+    tasks[i] = obj;
+  }
+
   localStorage.setItem('tasks', JSON.stringify(tasks));
 
-  if (date.value.trim() !== "") {
-    if (typeof Android !== "undefined") {
-        Android.scheduleNotification(obj.id, title.value, date.value);
-    }
+  if (date.value.trim() !== "" && typeof Android !== "undefined") {
+    Android.scheduleNotification(
+      obj.id,
+      obj.title,
+      obj.desc || "",
+      obj.date
+    );
   }
+
   reset();
   render();
 }
