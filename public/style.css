@@ -222,16 +222,36 @@ h1 {
   margin-bottom: 15px;
 }
 
+/* ===== Collapsible Groups ===== */
+
 .group-header {
   font-weight: bold;
   font-size: 1.1rem;
   color: var(--blue);
   cursor: pointer;
-  padding: 5px 0;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .group-content {
-  margin-top: 8px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease;
+}
+
+.group-content.open {
+  max-height: 2000px; /* large enough */
+}
+
+.arrow {
+  transition: transform 0.3s ease;
+  font-size: 0.8rem;
+}
+
+.arrow.rotate {
+  transform: rotate(90deg);
 }
 
 /* Overdue tasks */

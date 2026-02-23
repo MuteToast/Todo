@@ -53,7 +53,13 @@ function render() {
     const taskDate = new Date(t.date);
     const taskDay = taskDate.toDateString();
 
-    if (taskDate < now && !t.done) {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const taskDayOnly = new Date(t.date);
+    taskDayOnly.setHours(0,0,0,0);
+
+    if (taskDayOnly < today && !t.done) {
       groups.overdue.push(t);
     }
     else if (taskDay === todayStr) {
@@ -75,16 +81,16 @@ function render() {
   });
 
   // Render in order
-  renderGroup("🔴 Overdue", groups.overdue, true);
-  renderGroup("📅 Today", groups.today);
-  renderGroup("🌤 Tomorrow", groups.tomorrow);
+  renderGroup("Overdue", groups.overdue, true);
+  renderGroup("Today", groups.today);
+  renderGroup("Tomorrow", groups.tomorrow);
 
   Object.keys(groups.future).sort().forEach(date => {
-    renderGroup("📆 " + date, groups.future[date]);
+    renderGroup(date, groups.future[date]);
   });
 
-  renderGroup("📝 No Date", groups.nodate);
-  renderGroup("✅ Completed", groups.completed);
+  renderGroup("No Date", groups.nodate);
+  renderGroup("Completed", groups.completed);
 }
 
 function renderGroup(title, tasks, open = false) {
@@ -96,14 +102,23 @@ function renderGroup(title, tasks, open = false) {
 
   const header = document.createElement("div");
   header.className = "group-header";
-  header.textContent = title;
+  header.innerHTML = `
+  <span class="arrow">></span>
+  <span>${title}</span>
+  `;
 
   const content = document.createElement("div");
   content.className = "group-content";
-  if (!open) content.classList.add("hide");
+  if (open) {
+    content.classList.add("open");
+    setTimeout(() => {
+      header.querySelector(".arrow").classList.add("rotate");
+    }, 0);
+  }
 
   header.addEventListener("click", () => {
-    content.classList.toggle("hide");
+    content.classList.toggle("open");
+    header.querySelector(".arrow").classList.toggle("rotate");
   });
 
   tasks.forEach(t => {
@@ -112,8 +127,16 @@ function renderGroup(title, tasks, open = false) {
     if (t.done) div.classList.add("done");
 
     // Overdue style
-    if (!t.done && t.date && new Date(t.date) < new Date()) {
-      div.classList.add("overdue");
+    if (!t.done && t.date) {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      const taskDayOnly = new Date(t.date);
+      taskDayOnly.setHours(0,0,0,0);
+
+      if (taskDayOnly < today) {
+        div.classList.add("overdue");
+      }
     }
 
     div.innerHTML = `
